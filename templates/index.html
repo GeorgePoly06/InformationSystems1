@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            background: #f4f4f4;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        h1 { text-align: center; }
+
+        form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input, button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        input {
+            flex: 1;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        li {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            list-style: none;
+        }
+
+        li button {
+            float: right;
+            background-color: #dc3545;
+            color: white;
+        }
+
+        li button:hover {
+            background-color: #a71d2a;
+        }
+    </style>
+</head>
+<body>
+    <h1>User Manager</h1>
+
+    <form id="addUserForm">
+        <input id="name" placeholder="Name" required>
+        <input id="email" placeholder="Email" required>
+        <button type="submit">Add</button>
+    </form>
+
+    <ul id="userList"></ul>
+
+    <script>
+        async function loadUsers() {
+            const res = await fetch('/api/users');
+            const users = await res.json();
+            const list = document.getElementById('userList');
+            list.innerHTML = '';
+
+            users.forEach(u => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${u.name} (${u.email})
+                    <button onclick="deleteUser(${u.id})">Delete</button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        async function addUser(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            if (!name || !email) return alert("Please fill all fields");
+
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email })
+            });
+
+            if (res.ok) {
+                document.getElementById('addUserForm').reset();
+                loadUsers();
+            } else {
+                alert('Failed to add user (email may already exist)');
+            }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Are you sure you want to delete this user?')) return;
+
+            const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                loadUsers();
+            } else {
+                alert('Failed to delete user');
+            }
+        }
+
+        document.getElementById('addUserForm').addEventListener('submit', addUser);
+
+        loadUsers();
+    </script>
+</body>
+</html>
